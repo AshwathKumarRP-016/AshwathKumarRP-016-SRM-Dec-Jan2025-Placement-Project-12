@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Place New Order</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .item-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .item-select {
+            flex: 3;
+        }
+        .quantity-input {
+            flex: 1;
+        }
+        .remove-btn {
+            flex: 0 0 40px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .remove-btn:hover {
+            background-color: #cc0000;
+        }
+        .add-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+        }
+        .add-btn:hover {
+            background-color: #45a049;
+        }
+        .submit-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            display: block;
+            width: 100%;
+            margin-top: 30px;
+        }
+        .submit-btn:hover {
+            background-color: #0b7dda;
+        }
+        .note {
+            font-size: 14px;
+            color: #666;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Customer Order Placement System</h1>
+            <p>Fill out the form below to place your order</p>
+        </div>
+        
+        <form id="orderForm" action="OrderServlet" method="post">
+            <input type="hidden" name="action" value="placeOrder">
+            
+            <div class="form-group">
+                <label for="customerName">Customer Name *</label>
+                <input type="text" id="customerName" name="customerName" 
+                       required placeholder="Enter your full name">
+            </div>
+            
+            <h3>Select Items</h3>
+            <div id="itemsContainer">
+                <!-- Predefined items will be added here by JavaScript -->
+            </div>
+            
+            <h3>Custom Items (if not in list)</h3>
+            <div id="customItemsContainer">
+                <div class="custom-item-row item-row">
+                    <input type="text" name="customItems[]" class="item-select" 
+                           placeholder="Enter custom item name">
+                    <input type="number" name="customQuantities[]" class="quantity-input" 
+                           min="1" value="1" placeholder="Qty">
+                    <button type="button" class="remove-btn" onclick="removeCustomItem(this)">×</button>
+                </div>
+            </div>
+            <button type="button" class="add-btn" onclick="addCustomItem()">+ Add Custom Item</button>
+            
+            <button type="submit" class="submit-btn">Submit Order</button>
+        </form>
+        
+        
+    </div>
+
+    <script>
+       
+        const predefinedItems = [
+            'Laptop', 'Mouse', 'Keyboard', 'Monitor', 'Headphones',
+            'Notebook', 'Pen', 'Coffee Mug', 'Water Bottle', 'Backpack'
+        ];
+        
+        // Initialize form with one predefined item row
+        document.addEventListener('DOMContentLoaded', function() {
+            addPredefinedItemRow();
+        });
+        
+        function addPredefinedItemRow() {
+            const container = document.getElementById('itemsContainer');
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <select name="items[]" class="item-select" onchange="checkCustomItem(this)">
+                    <option value="">-- Select Item --</option>
+                    ${predefinedItems.map(item => `<option value="${item}">${item}</option>`).join('')}
+                    <option value="custom">-- Other (Custom) --</option>
+                </select>
+                <input type="number" name="quantities[]" class="quantity-input" min="1" value="1" placeholder="Qty">
+                <button type="button" class="remove-btn" onclick="removeItemRow(this)">×</button>
+            `;
+            container.appendChild(row);
+        }
+        
+        function addCustomItem() {
+            const container = document.getElementById('customItemsContainer');
+            const row = document.createElement('div');
+            row.className = 'custom-item-row item-row';
+            row.innerHTML = `
+                <input type="text" name="customItems[]" class="item-select" 
+                       placeholder="Enter custom item name">
+                <input type="number" name="customQuantities[]" class="quantity-input" 
+                       min="1" value="1" placeholder="Qty">
+                <button type="button" class="remove-btn" onclick="removeCustomItem(this)">×</button>
+            `;
+            container.appendChild(row);
+        }
+        
+        function removeItemRow(button) {
+            const row = button.parentElement;
+            row.remove();
+            
+           
+            const itemsContainer = document.getElementById('itemsContainer');
+            if (itemsContainer.children.length === 0) {
+                addPredefinedItemRow();
+            }
+        }
+        
+        function removeCustomItem(button) {
+            const row = button.parentElement;
+            row.remove();
+            
+            
+            const customContainer = document.getElementById('customItemsContainer');
+            if (customContainer.children.length === 0) {
+                addCustomItem();
+            }
+        }
+        
+        function checkCustomItem(select) {
+            if (select.value === 'custom') {
+               
+                const row = select.parentElement;
+                const quantityInput = row.querySelector('input[name="quantities[]"]');
+                
+                
+                addCustomItem();
+                const customContainer = document.getElementById('customItemsContainer');
+                const lastCustomRow = customContainer.lastElementChild;
+                const customItemInput = lastCustomRow.querySelector('input[name="customItems[]"]');
+                const customQuantityInput = lastCustomRow.querySelector('input[name="customQuantities[]"]');
+                
+                customQuantityInput.value = quantityInput.value || 1;
+                
+                
+                select.value = '';
+                quantityInput.value = 1;
+                
+               
+                const itemsContainer = document.getElementById('itemsContainer');
+                if (itemsContainer.children.length === 1) {
+                    addPredefinedItemRow();
+                }
+                removeItemRow(row.querySelector('.remove-btn'));
+            }
+        }
+        
+        
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            const customerName = document.getElementById('customerName').value.trim();
+            if (!customerName) {
+                e.preventDefault();
+                alert('Please enter your name');
+                return;
+            }
+            
+            
+            const hasPredefinedItems = Array.from(document.querySelectorAll('select[name="items[]"]'))
+                .some(select => select.value && select.value !== 'custom');
+            const hasCustomItems = Array.from(document.querySelectorAll('input[name="customItems[]"]'))
+                .some(input => input.value.trim());
+            
+            if (!hasPredefinedItems && !hasCustomItems) {
+                e.preventDefault();
+                alert('Please add at least one item to your order');
+                return;
+            }
+        });
+    </script>
+    <script>
+document.getElementById('orderForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get customer name
+    const customerName = document.getElementById('customerName').value.trim();
+    
+    // Collect all items from the form
+    const orderItems = [];
+    
+    // 1. Get predefined items (dropdown selections)
+    const itemSelects = document.querySelectorAll('select[name="items[]"]');
+    const quantities = document.querySelectorAll('input[name="quantities[]"]');
+    
+    for (let i = 0; i < itemSelects.length; i++) {
+        const itemValue = itemSelects[i].value;
+        const quantityValue = quantities[i] ? quantities[i].value : '1';
+        
+        if (itemValue && itemValue.trim() !== '' && itemValue !== 'custom') {
+            orderItems.push({
+                name: itemValue.trim(),
+                quantity: parseInt(quantityValue) || 1,
+                isCustom: false
+            });
+        }
+    }
+    
+    // 2. Get custom items
+    const customItems = document.querySelectorAll('input[name="customItems[]"]');
+    const customQuantities = document.querySelectorAll('input[name="customQuantities[]"]');
+    
+    for (let i = 0; i < customItems.length; i++) {
+        const itemValue = customItems[i].value.trim();
+        const quantityValue = customQuantities[i] ? customQuantities[i].value : '1';
+        
+        if (itemValue !== '') {
+            orderItems.push({
+                name: itemValue,
+                quantity: parseInt(quantityValue) || 1,
+                isCustom: true
+            });
+        }
+    }
+    
+    // Check if at least one item is selected
+    if (orderItems.length === 0) {
+        alert('Please add at least one item to your order.');
+        return;
+    }
+    
+    // Store data in localStorage
+    localStorage.setItem('lastOrderCustomer', customerName);
+    localStorage.setItem('lastOrderItems', JSON.stringify(orderItems));
+    
+    // Submit form to servlet (if you have one)
+    // OR redirect to order summary page with data
+    window.location.href = `order-summary.html?customerName=${encodeURIComponent(customerName)}`;
+});
+</script>
+</body>
+</html>
